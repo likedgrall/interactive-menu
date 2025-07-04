@@ -2,9 +2,21 @@ import { fetchDishesList } from "./getMenuStore.js";
 
 let MENU_STORE = ""; // Вся наша таблица Excel
 let BASKET_LIST_STORE = []; // Содержимое корзины. Массив.
+let ORDER_LIST = []; // Список заказов. Массив.
 const langUser = document.documentElement.lang; // Язык пользователя
 const langMain = "ru"; // Главный язык меню
-const simvolMoney = "₽"
+const simvolMoney = "₽" 
+
+// const из html
+const sendOrderButton = document.querySelector("#sendOrderButton");
+const wrapper = document.querySelector(".wrapper");
+const dialogBox = document.querySelector(".dialog-box")
+
+// изменяемые переменные для меню
+let tableNumber = 'none';
+let orderId = 'none';
+let category_active = "";
+
 
 
 fetchDishesList()
@@ -35,11 +47,13 @@ function renderCategorysButton() {
         categoriesListDiv.querySelector(".button_active").classList.remove("button_active");
         categoryButton.classList.add("button_active");
         renderMenu(category);
+        category_active = category;
       })
     }
   });
   categoriesListDiv.querySelector("button").className = "button_active";
   renderMenu(categoriesListDiv.querySelector("button").innerText);
+  category_active = categoriesListDiv.querySelector("button").innerText;
 }
 
 function renderMenu(category) {
@@ -142,11 +156,52 @@ function renderMenu(category) {
 
 
 const shopcase = document.querySelector(".shopcase");
+const iconShopcase = document.querySelector("#icon");
 const shopcaseButton = document.querySelector(".shopcase-button");
+const orderWrapperBox = document.querySelector(".order-wrapper-box")
+const orderWrapper = document.querySelector(".order-wrapper");
+const orderList = document.querySelector(".order__list");
+const showOrderList = document.querySelector("#view-order");
+const historyOrderButton = document.querySelector(".historyOrderButton")
+const historyWrapper = document.querySelector(".history-wrapper");
+const historyBox = document.querySelector(".history-box");
+const closeWindowHistoryButton = document.querySelector("#closeHistoryWindow");
+const closeWindowOrderButton = document.querySelector("#closeOrderWindow");
 
 shopcaseButton.onclick = function () {
     shopcase.classList.toggle("shopcase_active")
+    
+    if (shopcase.classList.contains("shopcase_active")) {
+      iconShopcase.classList.remove("fa-basket-shopping");
+      iconShopcase.classList.add("fa-xmark");
+    } 
+    else {
+      iconShopcase.classList.remove("fa-xmark");
+      iconShopcase.classList.add("fa-basket-shopping");
+    }
 }
+
+showOrderList.onclick = function() {
+  orderWrapperBox.classList.add("_active");
+  orderWrapper.classList.add("_active");
+}
+
+historyOrderButton.onclick = function() {
+  historyWrapper.classList.add("_active");
+  historyBox.classList.add("_active");
+}
+
+closeWindowOrderButton.onclick = function() {
+  orderWrapperBox.classList.remove("_active");
+  orderWrapper.classList.remove("_active");
+}
+
+closeWindowHistoryButton.onclick = function () {
+  historyWrapper.classList.remove("_active");
+  historyBox.classList.remove("_active");
+}
+
+
 
 function updateBasket(
   buttonType,
@@ -225,7 +280,7 @@ function updateBasket(
   }
   console.log(BASKET_LIST_STORE);
   renderBasketCards();
-  TotalCostBasketCalculation();
+  TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
 }
 
 function renderBasketCards() {
@@ -290,16 +345,228 @@ function renderBasketCards() {
 
         shopcaseListDiv.appendChild(cardBasketDiv);
     });
+
+    if (BASKET_LIST_STORE.length > 0) {
+      sendOrderButton.classList.add("_active");
+      sendOrderButton.addEventListener("click", () => {
+        if (tableNumber == 'none') {
+          createDialogBox("requestTableNumber", "Введите номер стола")
+        } else {
+          createMessageToTelegram('newOrder');
+        }
+        
+      })
+    } else {
+      sendOrderButton.classList.remove("_active")
+    }
+
+    
 }
 
-function TotalCostBasketCalculation() {
+function createMessageToTelegram(type) {
+    let messageTitle = '';
+    let messageHead = '';
+    let messageBody = '';
+    let messageFooter = '';
+    if (type == 'newOrder') {
+      const newOrderId = createOrderId().toTg;
+      messageTitle = "🔴 Новый заказ"
+      
+      messageHead = 
+      `
+🗣 Родной язык посетителя – ${langUser}🇷🇺
+🍽️ Стол № – ${tableNumber}
+#️⃣ Номер заказа ↴
+${newOrderId}                    
+      `;
+      messageBody = `📝Список блюд:`;
+      let disheNumber = 0;
+      let basketTotalCost = 0;
+      BASKET_LIST_STORE.forEach(basketItem => {
+        disheNumber++;
+        const porcionTotalCost = basketItem.porcionCost * basketItem.quantityPorcionNumber;
+        basketTotalCost += porcionTotalCost;
+        messageBody += 
+        `
+${disheNumber}. ${basketItem.langMainDishesName} (${basketItem.category})
+    ${basketItem.porcionName} × ${basketItem.quantityPorcionNumber} = ${porcionTotalCost}${simvolMoney}
+        `;
+      });
+      messageFooter = `💵Стоимость заказа - ${basketTotalCost}${simvolMoney}`;
+    }
+    const fullMessage = `
+${messageTitle}
+${messageHead}
+${messageBody}
+${messageFooter}    
+    `
+    sendMessageToTg(fullMessage);
+}
+
+function TotalCostBasketCalculation(list, span) {
   const basketTotalCostNumber = document.getElementById("shopcaseTotalCostNumber");
   let basketTotalCostCalculationNumbers = 0;
 
-  BASKET_LIST_STORE.forEach(cardBasket => {
+  list.forEach(cardBasket => {
     basketTotalCostCalculationNumbers += parseInt(cardBasket.porcionCost) * parseInt(cardBasket.quantityPorcionNumber);
   })
 
-  basketTotalCostNumber.innerText = `${basketTotalCostCalculationNumbers} ${simvolMoney}`
+  span.innerText = `${basketTotalCostCalculationNumbers} ${simvolMoney}`
 }
+
+function createOrderId() {
+  // Получаем текущую дату и время
+  const now = new Date();
+  
+  // Форматируем компоненты даты с добавлением ведущих нулей
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Месяцы 0-11
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+  // Создаем объект с двумя форматами
+  const newOrderId = {
+    toTg: `#N${day}_${month}_${year}__${hours}_${minutes}_${seconds}__${tableNumber}`,
+    toHtml: `${day}.${month}.${year} ${hours}:${minutes}:${seconds} - ${tableNumber}`
+  };
+  
+  // Сохраняем в глобальную переменную
+  orderId = newOrderId;
+  
+  // Возвращаем новый orderId
+  return newOrderId;
+}
+
+function createTimeOrder() {
+  // Получаем текущую дату и время
+  const now = new Date();
+  
+  // Форматируем компоненты даты с добавлением ведущих нулей
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const time = `${hours}:${minutes}`
+
+  return time
+}
+
+function createDialogBox(type, title) {
+  dialogBox.innerHTML = '';
+
+  if (type == "requestTableNumber") {
+    dialogBox.innerHTML = 
+    `
+    <h4>${title}</h4>
+    <input placeholder="Номер стола" type="text">
+    <div class="dialog-box__buttons">
+        <button class="send">Отправить</button>
+        <button class="close">Отмена</button>
+    </div>
+    `
+    const send = dialogBox.querySelector(".send");
+    const close = dialogBox.querySelector(".close");
+
+    send.addEventListener("click", () => {
+      const inputText = dialogBox.querySelector("input").value;
+      if (inputText == "" && inputText == null) {
+        dialogBox.querySelector("h4").innerText = "Введите номер стола корректно!"
+      } else {
+        tableNumber = inputText;
+        createMessageToTelegram("newOrder");
+        wrapper.classList.remove("_active");
+      }
+      
+    });
+
+    close.addEventListener("click", () => {
+      wrapper.classList.remove("_active")
+    })
+
+    wrapper.classList.add("_active");
+  }
+  
+}
+
+async function sendMessageToTg(messageText) {
+  const chatId = "-4869517272";
+  const token = "7155440374:AAF23ryT70cvWDcRKq7RB_LpwPF4MLbbOaM";
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: messageText,
+        parse_mode: 'HTML' // Можно использовать 'MarkdownV2' вместо HTML
+      })
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('Ошибка отправки:', result);
+      return false;
+    }
+    
+    console.log('Сообщение отправлено:', result);
+    BASKET_LIST_STORE.forEach(item => {
+      ORDER_LIST.unshift(item);
+    });
+    BASKET_LIST_STORE = [];
+    renderBasketCards();
+    TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
+    renderMenu(category_active);
+    renderViewOrderCards()
+    return true;
+    
+  } catch (error) {
+    console.error('Ошибка сети:', error);
+    return false;
+  }
+}
+
+function renderViewOrderCards() {
+    const order_list = document.querySelector(".order__list")
+    orderList.innerHTML = "";
+
+    ORDER_LIST.forEach(item => {
+      const cardOrder = document.createElement("div");
+      cardOrder.className = "order-card";
+      cardOrder.innerHTML = 
+      `
+      <div class="order-card__image">
+          <img src="${item.srcImg}" alt="">
+          <h3>${item.langUserDishesName} </h3>
+          <div class="order-card__time">
+              <span id="iconClock"><i class="fa-regular fa-clock"></i></span>
+              <span id="timeOrder">${createTimeOrder()}</span>
+          </div>
+      </div>
+      <div class="order-card__info">
+          <p><span>${item.porcionName} - </span><span>${item.porcionCost} ${simvolMoney}</span> x <span>${item.quantityPorcionNumber}</span></p>
+          <span class="cost">${item.porcionCost * item.quantityPorcionNumber} ${simvolMoney}</span>
+      </div>
+      `
+
+      orderList.appendChild(cardOrder);
+
+
+    });
+
+    const buyOrderButton = document.querySelector("#buyOrder");
+    if (ORDER_LIST.length > 0) {
+      buyOrderButton.classList.add("_active");
+    } else {
+      sendOrderButton.classList.remove("_active")
+    }
+
+
+    TotalCostBasketCalculation(ORDER_LIST, document.getElementById("TotalCostOrderList"));
+}
+
 

@@ -14,30 +14,119 @@
 
 <body>
     <div class="preloader">
-        <img src="https://d1csarkz8obe9u.cloudfront.net/posterpreviews/logo-cafe-design-template-7f94e77f661e2cc47d7e11eda2f4bf81_screen.jpg?ts=1624158342" alt="">
+        <img src="https://d1csarkz8obe9u.cloudfront.net/posterpreviews/logo-cafe-design-template-7f94e77f661e2cc47d7e11eda2f4bf81_screen.jpg?ts=1624158342"
+            alt="">
     </div>
     <nav>
         <div class="nav__elements">
             <div class="nav__links">
                 <a href="#">EN</a>
             </div>
-            <button class="shopcase-button"><i class="fa-solid fa-basket-shopping"></i></button>
+            <div class="button">
+                <button class="shopcase-button"><i id="icon" class="fa-solid fa-basket-shopping"></i></button>
+                <span class="red-point"></span>
+            </div>
         </div>
     </nav>
     <div class="shopcase">
-        <h2>Корзина</h2>
-        <p><span id="shopcaseTotalCostText">Общая стоимость всех блюд в корзине: </span><span id="shopcaseTotalCostNumber">0₽</span></p>
-        <div class="shopcase__list">
-            
+        <div class="order-box">
+            <div class="button">
+                <button class="historyOrderButton"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                <span class="red-point"></span>
+            </div>
+            <div class="order-box__head">
+                <h2>Общая стоимость заказа:
+                    <br>
+                    <span>0₽</span>
+                </h2>
+            </div>
+            <div class="order-box__buttons">
+                <button id="view-order" class="view-order">Посмотреть заказ</button>
+                <button class="buy-order">Оплатить заказ</button>
+            </div>
         </div>
-        <button>Отправить заказ</button>
+
+        <p><span id="shopcaseTotalCostText">Общая стоимость всех блюд в корзине: </span><span
+                id="shopcaseTotalCostNumber">0₽</span></p>
+        <div class="shopcase__list">
+
+        </div>
+        <button id="sendOrderButton">Отправить заказ</button>
     </div>
+
+    <div class="history-wrapper">
+        <div class="history-box">
+            <button id="closeHistoryWindow"><i class="fa-thin fa-xmark-large"></i></button>
+            <h2>Ваши прошлые заказы</h2>
+            <div class="history__list">
+                <div class="history-card">
+                    <div class="history-card-name">
+                        <h4>03-07-2025 15:00</h4>
+                        <span id="totalCostHistoryName">670₽</span>
+                    </div>
+                    <div class="history-card__info">
+                        <div class="history-card__info-name">
+                            <h5>1. Овощная пицца</h5>
+                            <span id="costHistoryOrder">500 gr x 2 = 335₽</span>
+                        </div>
+                        <div class="history-card__info-name border-top">
+                            <h5>1. Овощная пицца</h5>
+                            <span id="costHistoryOrder">500 gr x 2 = 335₽</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="history-card">
+                    <div class="history-card-name">
+                        <h4>03-07-2025 15:00</h4>
+                        <span id="totalCostHistoryName">670₽</span>
+                    </div>
+                    <div class="history-card__info">
+                        <div class="history-card__info-name">
+                            <h5>1. Овощная пицца</h5>
+                            <span id="costHistoryOrder">500 gr x 2 = 335₽</span>
+                        </div>
+                        <div class="history-card__info-name border-top">
+                            <h5>1. Овощная пицца</h5>
+                            <span id="costHistoryOrder">500 gr x 2 = 335₽</span>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+            <p>Итого: <span id="totalCostHistoryList">670₽</span></p>
+        </div>
+    </div>
+
+    <div class="order-wrapper-box">
+        <div class="order-wrapper">
+            <button id="closeOrderWindow"><i class="fa-thin fa-xmark-large"></i></button>
+            <div class="order-list__head">
+                <h2>Общая стоимость заказа:
+                    <br>
+                    <span id="TotalCostOrderList">0₽</span>
+                </h2>
+            </div>
+            <h3 id="nameH3">Список заказов</h3>
+            <div class="order__list">
+                <!-- Content in JavaScript -->
+            </div>
+            <button id="buyOrder">Оплатить заказ</button>
+        </div>
+    </div>
+
     <div class="categories__list">
         <!-- Content in JavaScript -->
     </div>
+
     <section class="card-list">
         <!-- Content in JavaScript -->
     </section>
+
+    <div class="wrapper">
+        <div class="dialog-box">
+
+        </div>
+    </div>
+
     <footer>
         <div class="footer__elements">
             <a href="#">Adress CafeName</a>
