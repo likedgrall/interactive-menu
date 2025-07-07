@@ -190,6 +190,7 @@ nav {
         outline: none;
         border: none;
         cursor: pointer;
+        font-size: 14px;
 
         &.view-order {
           background-color: white;
@@ -404,6 +405,7 @@ nav {
       font-size: 32px;
       border-radius: 100%;
       background-color: transparent;
+      color: var(--color1);
       border: none;
     }
 
@@ -588,6 +590,7 @@ nav {
       font-size: 32px;
       border-radius: 100%;
       background-color: transparent;
+      color: var(--color1);
       border: none;
     }
 
