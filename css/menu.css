@@ -109,6 +109,8 @@ nav {
       & .red-point {
         width: 12.5px;
         z-index: 10005;
+        opacity: 0;
+        visibility: hidden;
         height: 12.5px;
         background-color: red;
         color: var(--color2);
@@ -118,6 +120,11 @@ nav {
         position: absolute;
         top: 0;
         right: 0;
+
+        &._active {
+          opacity: 1;
+          visibility: visible;
+        }
       }
     }
   }
@@ -157,6 +164,8 @@ nav {
       & .red-point {
         width: 12.5px;
         z-index: 10005;
+        opacity: 0;
+        visibility: hidden;
         height: 12.5px;
         background-color: red;
         color: var(--color2);
@@ -166,6 +175,11 @@ nav {
         position: absolute;
         top: 0;
         left: 37px;
+
+        &._active {
+          opacity: 1;
+          visibility: visible;
+        }
       }
     }
 
@@ -389,7 +403,8 @@ nav {
     border-radius: 20px;
     transition: 0.5s;
     padding-top: 75px;
-    padding-bottom: 10px;
+    padding-bottom: 0px;
+    overflow: hidden;
     border: 2px solid black;
 
     &._active {
@@ -483,6 +498,14 @@ nav {
           }
         }
       }
+    }
+
+    & p {
+      background-color: var(--color3);
+      color: var(--color2);
+      text-align: center;
+      font-size: 22px;
+      padding: 15px 0;
     }
   }
 }
@@ -617,6 +640,7 @@ nav {
       color: var(--color2);
       opacity: 0.5;
       pointer-events: none;
+      cursor: pointer;
 
       &._active {
         opacity: 1;
@@ -677,6 +701,7 @@ nav {
     transition: 0.4s;
     cursor: pointer;
     color: var(--color2);
+    font-size: 16px;
 
     &.button_active {
       background-color: var(--color4);
@@ -733,12 +758,14 @@ nav {
         background-color: var(--color5) !important;
         color: var(--color2) !important;
         border: var(--color4) !important;
+        
       }
 
       & .card-porcions .minus {
         background-color: transparent !important;
         color: var(--color5) !important;
         border: 1px solid var(--color5) !important;
+        
       }
     }
 
@@ -785,7 +812,7 @@ nav {
             display: flex;
             flex-wrap: nowrap;
             & span {
-              font-size: 18px;
+              font-size: 20px;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -801,6 +828,7 @@ nav {
               color: var(--color2);
               border: 1px solid var(--color2);
               transition: 0.5s;
+              font-size: 18px;
             }
 
             & .plus {
@@ -863,6 +891,18 @@ nav {
 
       &.close {
         border: 1px solid var(--color1);
+      }
+
+      &.card-payment {
+        background-color: var(--color3);
+        border: 1px solid var(--color1);
+        color: var(--color2);
+      }
+
+      &.cash-payment {
+        background-color: var(--color3);
+        border: 1px solid var(--color1);
+        color: var(--color2);
       }
     }
   }

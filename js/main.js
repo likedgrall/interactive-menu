@@ -3,14 +3,21 @@ import { fetchDishesList } from "./getMenuStore.js";
 let MENU_STORE = ""; // Вся наша таблица Excel
 let BASKET_LIST_STORE = []; // Содержимое корзины. Массив.
 let ORDER_LIST = []; // Список заказов. Массив.
+let HISTORY_LIST = []; // Список истории заказов. Массив.
 const langUser = document.documentElement.lang; // Язык пользователя
 const langMain = "ru"; // Главный язык меню
-const simvolMoney = "₽" 
+const simvolMoney = "₽"
 
 // const из html
 const sendOrderButton = document.querySelector("#sendOrderButton");
 const wrapper = document.querySelector(".wrapper");
 const dialogBox = document.querySelector(".dialog-box")
+const redPointHistory = document.querySelector("#historyPoint");
+const redPointShopcase = document.querySelector("#shopcaseButtonPoint");
+const buyOrderButton = document.querySelector("#buyOrder");
+buyOrderButton.addEventListener("click", () => {
+  createDialogBox("requestPaymentMethod", "Выберете способ оплаты");
+});
 
 // изменяемые переменные для меню
 let tableNumber = 'none';
@@ -64,7 +71,7 @@ function renderMenu(category) {
     if (menuStoreItem.inStore == "yes" && category == menuStoreItem[`${langUser}Category`]) {
       const searchResultCardInBasket = BASKET_LIST_STORE.find(basketCard => basketCard.langUserDishesName == menuStoreItem[`${langUser}DishesName`]);
       const menuCardDiv = document.createElement("div");
-      
+
       menuCardDiv.setAttribute("id", menuStoreItem.id);
       if (searchResultCardInBasket) {
         menuCardDiv.className = "card card_active";
@@ -169,29 +176,29 @@ const closeWindowHistoryButton = document.querySelector("#closeHistoryWindow");
 const closeWindowOrderButton = document.querySelector("#closeOrderWindow");
 
 shopcaseButton.onclick = function () {
-    shopcase.classList.toggle("shopcase_active")
-    
-    if (shopcase.classList.contains("shopcase_active")) {
-      iconShopcase.classList.remove("fa-basket-shopping");
-      iconShopcase.classList.add("fa-xmark");
-    } 
-    else {
-      iconShopcase.classList.remove("fa-xmark");
-      iconShopcase.classList.add("fa-basket-shopping");
-    }
+  shopcase.classList.toggle("shopcase_active")
+
+  if (shopcase.classList.contains("shopcase_active")) {
+    iconShopcase.classList.remove("fa-basket-shopping");
+    iconShopcase.classList.add("fa-xmark");
+  }
+  else {
+    iconShopcase.classList.remove("fa-xmark");
+    iconShopcase.classList.add("fa-basket-shopping");
+  }
 }
 
-showOrderList.onclick = function() {
+showOrderList.onclick = function () {
   orderWrapperBox.classList.add("_active");
   orderWrapper.classList.add("_active");
 }
 
-historyOrderButton.onclick = function() {
+historyOrderButton.onclick = function () {
   historyWrapper.classList.add("_active");
   historyBox.classList.add("_active");
 }
 
-closeWindowOrderButton.onclick = function() {
+closeWindowOrderButton.onclick = function () {
   orderWrapperBox.classList.remove("_active");
   orderWrapper.classList.remove("_active");
 }
@@ -216,11 +223,11 @@ function updateBasket(
   srcImg,
   quantitySpan
 ) {
-  
+
   const card = document.getElementById(`${idCard}`);
   console.log(card)
   if (action == "plus") {
-    const quantityPorcionNumber = parseInt(quantitySpan.innerText)+1;
+    const quantityPorcionNumber = parseInt(quantitySpan.innerText) + 1;
     if (buttonType == "basket") {
       if (card) {
         const cardQuantitySpan = card.querySelector(`[data-id='${idPorcion}']`).querySelector(".quantity");
@@ -249,22 +256,22 @@ function updateBasket(
         quantityPorcionNumber
       };
       BASKET_LIST_STORE.unshift(porcionInfo);
-      
+
     }
 
-  } 
+  }
   else { // если нажали на кнопку минус
     if (BASKET_LIST_STORE.find(item => item.idPorcion == idPorcion)) {
       BASKET_LIST_STORE.forEach(item => {
         if (item.idPorcion == idPorcion) {
-          const quantityPorcionNumber = parseInt(quantitySpan.innerText)-1;
+          const quantityPorcionNumber = parseInt(quantitySpan.innerText) - 1;
           if (buttonType == "basket") {
             if (card) {
               const cardQuantitySpan = card.querySelector(`[data-id='${idPorcion}']`).querySelector(".quantity");
               cardQuantitySpan.innerText = quantityPorcionNumber;
             }
           }
-          
+
           quantitySpan.innerText = quantityPorcionNumber;
           item.quantityPorcionNumber = quantityPorcionNumber;
 
@@ -278,21 +285,27 @@ function updateBasket(
       });
     }
   }
+  if (BASKET_LIST_STORE.length > 0) {
+    redPointShopcase.innerText = BASKET_LIST_STORE.length;
+    redPointShopcase.classList.add("_active");
+  } else {
+    redPointShopcase.classList.remove("_active");
+  }
   console.log(BASKET_LIST_STORE);
   renderBasketCards();
   TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
 }
 
 function renderBasketCards() {
-    const shopcaseListDiv = document.querySelector(".shopcase__list");
-    shopcaseListDiv.innerHTML = "";
+  const shopcaseListDiv = document.querySelector(".shopcase__list");
+  shopcaseListDiv.innerHTML = "";
 
-    BASKET_LIST_STORE.forEach(item => {
-        const cardBasketDiv = document.createElement("div");
-        cardBasketDiv.className = "shopcase-card";
-        const cardTotalCost = parseInt(item.porcionCost) * parseInt(item.quantityPorcionNumber);
-        cardBasketDiv.innerHTML = 
-        `
+  BASKET_LIST_STORE.forEach(item => {
+    const cardBasketDiv = document.createElement("div");
+    cardBasketDiv.className = "shopcase-card";
+    const cardTotalCost = parseInt(item.porcionCost) * parseInt(item.quantityPorcionNumber);
+    cardBasketDiv.innerHTML =
+      `
         <div class="shopcase-card__head">
             <img src="${item.srcImg}" alt="">
             <div class="shopcase-card__manager">
@@ -310,97 +323,98 @@ function renderBasketCards() {
             <p><span id="shopcaseCardPorcionName">${item.porcionName}</span> - <span id="shopcaseCardPorcionCost">${item.porcionCost} ${simvolMoney}</span></p>
         </div>
         `
-        const buttonMinus = cardBasketDiv.querySelector(".minus");
-        const buttonPlus = cardBasketDiv.querySelector(".plus");
-        buttonMinus.addEventListener("click", () => {
-          updateBasket(
-            "basket",
-            "minus",
-            item.category,
-            item.langMainDishesName,
-            item.langUserDishesName,
-            item.porcionName,
-            item.porcionCost,
-            item.idCard,
-            item.idPorcion,
-            item.linkImg,
-            cardBasketDiv.querySelector(".quantity")
-          );
-        });
-        buttonPlus.addEventListener("click", () => {
-          updateBasket(
-            "basket",
-            "plus",
-            item.category,
-            item.langMainDishesName,
-            item.langUserDishesName,
-            item.porcionName,
-            item.porcionCost,
-            item.idCard,
-            item.idPorcion,
-            item.linkImg,
-            cardBasketDiv.querySelector(".quantity")
-          );
-        });
-
-        shopcaseListDiv.appendChild(cardBasketDiv);
+    const buttonMinus = cardBasketDiv.querySelector(".minus");
+    const buttonPlus = cardBasketDiv.querySelector(".plus");
+    buttonMinus.addEventListener("click", () => {
+      updateBasket(
+        "basket",
+        "minus",
+        item.category,
+        item.langMainDishesName,
+        item.langUserDishesName,
+        item.porcionName,
+        item.porcionCost,
+        item.idCard,
+        item.idPorcion,
+        item.linkImg,
+        cardBasketDiv.querySelector(".quantity")
+      );
+    });
+    buttonPlus.addEventListener("click", () => {
+      updateBasket(
+        "basket",
+        "plus",
+        item.category,
+        item.langMainDishesName,
+        item.langUserDishesName,
+        item.porcionName,
+        item.porcionCost,
+        item.idCard,
+        item.idPorcion,
+        item.linkImg,
+        cardBasketDiv.querySelector(".quantity")
+      );
     });
 
-    if (BASKET_LIST_STORE.length > 0) {
-      sendOrderButton.classList.add("_active");
-      sendOrderButton.addEventListener("click", () => {
-        if (tableNumber == 'none') {
-          createDialogBox("requestTableNumber", "Введите номер стола")
-        } else {
-          createMessageToTelegram('newOrder');
-        }
-        
-      })
-    } else {
-      sendOrderButton.classList.remove("_active")
-    }
+    shopcaseListDiv.appendChild(cardBasketDiv);
+  });
 
-    
+  if (BASKET_LIST_STORE.length > 0) {
+    sendOrderButton.classList.add("_active");
+    sendOrderButton.addEventListener("click", () => {
+      if (tableNumber == 'none') {
+        createDialogBox("requestTableNumber", "Введите номер стола")
+      } else {
+        createMessageToTelegram('newOrder');
+      }
+
+    })
+  } else {
+    sendOrderButton.classList.remove("_active")
+  }
+
+
 }
 
-function createMessageToTelegram(type) {
-    let messageTitle = '';
-    let messageHead = '';
-    let messageBody = '';
-    let messageFooter = '';
-    if (type == 'newOrder') {
-      const newOrderId = createOrderId().toTg;
-      messageTitle = "🔴 Новый заказ"
-      
-      messageHead = 
+function createMessageToTelegram(type, paymentMethod = null) {
+  let messageTitle = '';
+  let messageHead = '';
+  let messageBody = '';
+  let messageFooter = '';
+  if (type == 'newOrder') {
+    const newOrderId = createOrderId().toTg;
+    messageTitle = "🟥 Новый заказ"
+
+    messageHead =
       `
 🗣 Родной язык посетителя – ${langUser}🇷🇺
 🍽️ Стол № – ${tableNumber}
 #️⃣ Номер заказа ↴
 ${newOrderId}                    
       `;
-      messageBody = `📝Список блюд:`;
-      let disheNumber = 0;
-      let basketTotalCost = 0;
-      BASKET_LIST_STORE.forEach(basketItem => {
-        disheNumber++;
-        const porcionTotalCost = basketItem.porcionCost * basketItem.quantityPorcionNumber;
-        basketTotalCost += porcionTotalCost;
-        messageBody += 
+    messageBody = `📝Список блюд:`;
+    let disheNumber = 0;
+    let basketTotalCost = 0;
+    BASKET_LIST_STORE.forEach(basketItem => {
+      disheNumber++;
+      const porcionTotalCost = basketItem.porcionCost * basketItem.quantityPorcionNumber;
+      basketTotalCost += porcionTotalCost;
+      messageBody +=
         `
 ${disheNumber}. ${basketItem.langMainDishesName} (${basketItem.category})
     ${basketItem.porcionName} × ${basketItem.quantityPorcionNumber} = ${porcionTotalCost}${simvolMoney}
         `;
-      });
-      messageFooter = `💵Стоимость заказа - ${basketTotalCost}${simvolMoney}`;
-    }
-    const fullMessage = `
+    });
+    messageFooter = `💵Стоимость заказа - ${basketTotalCost}${simvolMoney}`;
+  }
+  const fullMessage = `
 ${messageTitle}
 ${messageHead}
 ${messageBody}
 ${messageFooter}    
     `
-    sendMessageToTg(fullMessage);
+  sendMessageToTg(fullMessage);
+  // нужно сделать два типа сообщения: одно это обновление заказа, второе это оплата заказа (не разобрался как делать)
 }
 
 function TotalCostBasketCalculation(list, span) {
@@ -417,7 +431,7 @@ function TotalCostBasketCalculation(list, span) {
 function createOrderId() {
   // Получаем текущую дату и время
   const now = new Date();
-  
+
   // Форматируем компоненты даты с добавлением ведущих нулей
   const day = String(now.getDate()).padStart(2, '0');
   const month = String(now.getMonth() + 1).padStart(2, '0'); // Месяцы 0-11
@@ -425,16 +439,16 @@ function createOrderId() {
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
-  
+
   // Создаем объект с двумя форматами
   const newOrderId = {
     toTg: `#N${day}_${month}_${year}__${hours}_${minutes}_${seconds}__${tableNumber}`,
     toHtml: `${day}.${month}.${year} ${hours}:${minutes}:${seconds} - ${tableNumber}`
   };
-  
+
   // Сохраняем в глобальную переменную
   orderId = newOrderId;
-  
+
   // Возвращаем новый orderId
   return newOrderId;
 }
@@ -442,7 +456,20 @@ function createOrderId() {
 function createTimeOrder() {
   // Получаем текущую дату и время
   const now = new Date();
-  
+
+  // Форматируем компоненты даты с добавлением ведущих нулей
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const time = `${hours}:${minutes}`
+
+  return time
+}
+
+function createTimeOrderHistory() {
+  // Получаем текущую дату и время
+  const now = new Date();
+
   // Форматируем компоненты даты с добавлением ведущих нулей
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
@@ -455,8 +482,8 @@ function createDialogBox(type, title) {
   dialogBox.innerHTML = '';
 
   if (type == "requestTableNumber") {
-    dialogBox.innerHTML = 
-    `
+    dialogBox.innerHTML =
+      `
     <h4>${title}</h4>
     <input placeholder="Номер стола" type="text">
     <div class="dialog-box__buttons">
@@ -476,7 +503,7 @@ function createDialogBox(type, title) {
         createMessageToTelegram("newOrder");
         wrapper.classList.remove("_active");
       }
-      
+
     });
 
     close.addEventListener("click", () => {
@@ -485,7 +512,34 @@ function createDialogBox(type, title) {
 
     wrapper.classList.add("_active");
   }
-  
+  else if (type == "requestPaymentMethod") {
+    dialogBox.innerHTML =
+      `
+    <h4>${title}</h4>
+    <div class="dialog-box__buttons">
+        <button class="card-payment">Карта💳</button>
+        <button class="cash-payment">Наличные💵</button>
+        <button class="close">Отмена</button>
+    </div>
+    `
+
+    const close = dialogBox.querySelector(".close");
+    const cardPayment = dialogBox.querySelector(".card-payment");
+    const cashPayment = dialogBox.querySelector(".cash-payment");
+    cardPayment.addEventListener("click", () => {
+      createMessageToTelegram("methodPayment", "card");
+    });
+    cashPayment.addEventListener("click", () => {
+      createMessageToTelegram("methodPayment", "cash");
+    });
+
+    close.addEventListener("click", () => {
+      wrapper.classList.remove("_active");
+    });
+
+    wrapper.classList.add("_active");
+  }
+
 }
 
 async function sendMessageToTg(messageText) {
@@ -507,12 +561,12 @@ async function sendMessageToTg(messageText) {
     });
 
     const result = await response.json();
-    
+
     if (!response.ok) {
       console.error('Ошибка отправки:', result);
       return false;
     }
-    
+
     console.log('Сообщение отправлено:', result);
     BASKET_LIST_STORE.forEach(item => {
       ORDER_LIST.unshift(item);
@@ -523,7 +577,7 @@ async function sendMessageToTg(messageText) {
     renderMenu(category_active);
     renderViewOrderCards()
     return true;
-    
+
   } catch (error) {
     console.error('Ошибка сети:', error);
     return false;
@@ -531,13 +585,13 @@ async function sendMessageToTg(messageText) {
 }
 
 function renderViewOrderCards() {
-    const order_list = document.querySelector(".order__list")
-    orderList.innerHTML = "";
+  const order_list = document.querySelector(".order__list")
+  orderList.innerHTML = "";
 
-    ORDER_LIST.forEach(item => {
-      const cardOrder = document.createElement("div");
-      cardOrder.className = "order-card";
-      cardOrder.innerHTML = 
+  ORDER_LIST.forEach(item => {
+    const cardOrder = document.createElement("div");
+    cardOrder.className = "order-card";
+    cardOrder.innerHTML =
       `
       <div class="order-card__image">
           <img src="${item.srcImg}" alt="">
@@ -553,20 +607,26 @@ function renderViewOrderCards() {
       </div>
       `
 
-      orderList.appendChild(cardOrder);
+    orderList.appendChild(cardOrder);
 
 
-    });
+  });
+  if (ORDER_LIST.length > 0) {
+    buyOrderButton.classList.add("_active");
+  } else {
+    sendOrderButton.classList.remove("_active")
+  }
 
-    const buyOrderButton = document.querySelector("#buyOrder");
-    if (ORDER_LIST.length > 0) {
-      buyOrderButton.classList.add("_active");
-    } else {
-      sendOrderButton.classList.remove("_active")
-    }
+  const shopcaseBuyButton = document.querySelector("#shopcaseBuyButton");
+  if (ORDER_LIST.length > 0) {
+    shopcaseBuyButton.classList.add("_active");
+  } else {
+    shopcaseBuyButton.classList.remove("_active");
+  }
+  shopcaseBuyButton.addEventListener("click", () => {
+    createDialogBox("requestPaymentMethod", "Выберете способ оплаты");
+  });
 
-
-    TotalCostBasketCalculation(ORDER_LIST, document.getElementById("TotalCostOrderList"));
+  TotalCostBasketCalculation(ORDER_LIST, document.getElementById("TotalCostOrderList"));
 }
-
 
