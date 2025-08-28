@@ -210,6 +210,28 @@ nav {
           background-color: white;
           color: var(--color1);
           border-radius: 8px 0 0 0;
+          position: relative;
+
+          & .red-point {
+            width: 12.5px;
+            z-index: 10005;
+            opacity: 0;
+            visibility: hidden;
+            height: 12.5px;
+            background-color: red;
+            color: var(--color2);
+            text-align: center;
+            border-radius: 100%;
+            font-size: 10px;
+            position: absolute;
+            top: -2px;
+            right: -1.5px;
+
+            &._active {
+              opacity: 1;
+              visibility: visible;
+            }
+          }
         }
 
         &.buy-order {
@@ -221,9 +243,11 @@ nav {
           padding: 10px;
           outline: none;
           border: none;
-          cursor: pointer;
+          pointer-events: none;
           &._active {
             opacity: 1;
+            cursor: pointer;
+            pointer-events: visible;
           }
         }
       }
@@ -395,7 +419,6 @@ nav {
     top: 100%;
     display: flex;
     flex-direction: column;
-    gap: 10px;
     left: 10px;
     right: 10px;
     height: calc(100dvh - 20px);
@@ -437,18 +460,26 @@ nav {
       padding: 0 10px;
       overflow-y: scroll;
       gap: 10px;
+      box-shadow: inset 0px -3px 5px var(--color3-1);
 
       & .history-card {
         display: flex;
         flex-direction: column;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 40px;
+        transition: 0.4s;
+        flex-shrink: 0;
 
         & .history-card-name {
           background-color: var(--color5);
           padding: 10px;
-          border-radius: 8px;
+          border-radius: 8px 8px 0 0;
+          height: 40px;
           color: var(--color2);
           display: flex;
           justify-content: space-between;
+          cursor: pointer;
 
           & h4 {
             font-size: 16px;
@@ -467,8 +498,6 @@ nav {
           display: flex;
           flex-direction: column;
           border-radius: 0 0 8px 8px;
-          visibility: hidden;
-          opacity: 0;
 
           &._active {
             visibility: visible;
@@ -506,6 +535,7 @@ nav {
       text-align: center;
       font-size: 22px;
       padding: 15px 0;
+      
     }
   }
 }
@@ -758,14 +788,12 @@ nav {
         background-color: var(--color5) !important;
         color: var(--color2) !important;
         border: var(--color4) !important;
-        
       }
 
       & .card-porcions .minus {
         background-color: transparent !important;
         color: var(--color5) !important;
         border: 1px solid var(--color5) !important;
-        
       }
     }
 

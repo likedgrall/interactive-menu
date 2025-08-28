@@ -14,7 +14,21 @@ const wrapper = document.querySelector(".wrapper");
 const dialogBox = document.querySelector(".dialog-box")
 const redPointHistory = document.querySelector("#historyPoint");
 const redPointShopcase = document.querySelector("#shopcaseButtonPoint");
+const redPointViewOrder = document.querySelector("#ViewOrderPoint");
 const buyOrderButton = document.querySelector("#buyOrder");
+const shopcaseBuyButton = document.querySelector("#shopcaseBuyButton");
+const shopcase = document.querySelector(".shopcase");
+const iconShopcase = document.querySelector("#icon");
+const shopcaseButton = document.querySelector(".shopcase-button");
+const orderWrapperBox = document.querySelector(".order-wrapper-box")
+const orderWrapper = document.querySelector(".order-wrapper");
+const orderList = document.querySelector(".order__list");
+const showOrderList = document.querySelector("#view-order");
+const historyOrderButton = document.querySelector(".historyOrderButton")
+const historyWrapper = document.querySelector(".history-wrapper");
+const historyBox = document.querySelector(".history-box");
+const closeWindowHistoryButton = document.querySelector("#closeHistoryWindow");
+const closeWindowOrderButton = document.querySelector("#closeOrderWindow");
 buyOrderButton.addEventListener("click", () => {
   createDialogBox("requestPaymentMethod", "Выберете способ оплаты");
 });
@@ -25,6 +39,51 @@ let orderId = 'none';
 let category_active = "";
 
 
+// Объекты.
+let user_data = {
+  history_orders: [],
+  tableNumber: "",
+  basket: [],
+  orders: [],
+  orderId: "",
+};
+
+function checkSavedData() {
+  const savedUserData = JSON.parse(localStorage.getItem("user_data"));
+  if (savedUserData) {
+    user_data = savedUserData;
+    if (savedUserData.history_orders) {
+      HISTORY_LIST = savedUserData.history_orders;
+      renderHistoryCard()
+    }
+    if (savedUserData.tableNumber) {
+      tableNumber = savedUserData.tableNumber;
+    }
+    if (savedUserData.basket) {
+      BASKET_LIST_STORE = savedUserData.basket;
+      renderBasketCards();
+    }
+    if (savedUserData.orders) {
+      ORDER_LIST = savedUserData.orders;
+      renderViewOrderCards();
+    }
+    if (savedUserData.orderId) {
+      orderId = savedUserData.orderId;
+    }
+  }
+}
+checkSavedData()
+
+function savedData() {
+  user_data = {
+    history_orders: HISTORY_LIST,
+    tableNumber: tableNumber,
+    basket: BASKET_LIST_STORE,
+    orders: ORDER_LIST,
+    orderId: orderId,
+  }
+  localStorage.setItem("user_data", JSON.stringify(user_data));
+}
 
 fetchDishesList()
   .then(dishesList => {
@@ -162,19 +221,6 @@ function renderMenu(category) {
 }
 
 
-const shopcase = document.querySelector(".shopcase");
-const iconShopcase = document.querySelector("#icon");
-const shopcaseButton = document.querySelector(".shopcase-button");
-const orderWrapperBox = document.querySelector(".order-wrapper-box")
-const orderWrapper = document.querySelector(".order-wrapper");
-const orderList = document.querySelector(".order__list");
-const showOrderList = document.querySelector("#view-order");
-const historyOrderButton = document.querySelector(".historyOrderButton")
-const historyWrapper = document.querySelector(".history-wrapper");
-const historyBox = document.querySelector(".history-box");
-const closeWindowHistoryButton = document.querySelector("#closeHistoryWindow");
-const closeWindowOrderButton = document.querySelector("#closeOrderWindow");
-
 shopcaseButton.onclick = function () {
   shopcase.classList.toggle("shopcase_active")
 
@@ -278,27 +324,25 @@ function updateBasket(
           if (item.quantityPorcionNumber == 0) {
             BASKET_LIST_STORE = BASKET_LIST_STORE.filter(item => item.idPorcion !== idPorcion);
             if (!BASKET_LIST_STORE.find(item => item.langMainDishesName == langMainDishesName)) {
-              card.classList.remove("card_active");
+              if (card) {
+                card.classList.remove("card_active");
+              }
             }
           }
         }
       });
     }
   }
-  if (BASKET_LIST_STORE.length > 0) {
-    redPointShopcase.innerText = BASKET_LIST_STORE.length;
-    redPointShopcase.classList.add("_active");
-  } else {
-    redPointShopcase.classList.remove("_active");
-  }
   console.log(BASKET_LIST_STORE);
   renderBasketCards();
-  TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
+  
 }
 
 function renderBasketCards() {
   const shopcaseListDiv = document.querySelector(".shopcase__list");
   shopcaseListDiv.innerHTML = "";
+  user_data.basket = BASKET_LIST_STORE;
+  savedData();
 
   BASKET_LIST_STORE.forEach(item => {
     const cardBasketDiv = document.createElement("div");
@@ -361,22 +405,36 @@ function renderBasketCards() {
 
   if (BASKET_LIST_STORE.length > 0) {
     sendOrderButton.classList.add("_active");
-    sendOrderButton.addEventListener("click", () => {
-      if (tableNumber == 'none') {
-        createDialogBox("requestTableNumber", "Введите номер стола")
-      } else {
-        createMessageToTelegram('newOrder');
-      }
-
-    })
   } else {
     sendOrderButton.classList.remove("_active")
   }
 
-
+  if (BASKET_LIST_STORE.length > 0) {
+    redPointShopcase.innerText = BASKET_LIST_STORE.length;
+    redPointShopcase.classList.add("_active");
+  } else {
+    redPointShopcase.classList.remove("_active");
+  }
+  TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
 }
 
+sendOrderButton.addEventListener("click", () => {
+  if (ORDER_LIST.length > 0) {
+    console.log("ок")
+    createMessageToTelegram('updateOrder');
+  } else {
+    if (tableNumber == 'none' || tableNumber == undefined || tableNumber == "") {
+      createDialogBox("requestTableNumber", "Введите номер стола")
+    } else {
+      createMessageToTelegram('newOrder');
+    }
+  }
+
+
+})
+
 function createMessageToTelegram(type, paymentMethod = null) {
+  let basketTotalCost = 0;
   let messageTitle = '';
   let messageHead = '';
   let messageBody = '';
@@ -394,7 +452,6 @@ ${newOrderId}
       `;
     messageBody = `📝Список блюд:`;
     let disheNumber = 0;
-    let basketTotalCost = 0;
     BASKET_LIST_STORE.forEach(basketItem => {
       disheNumber++;
       const porcionTotalCost = basketItem.porcionCost * basketItem.quantityPorcionNumber;
@@ -407,14 +464,83 @@ ${disheNumber}. ${basketItem.langMainDishesName} (${basketItem.category})
     });
     messageFooter = `💵Стоимость заказа - ${basketTotalCost}${simvolMoney}`;
   }
+  if (type == 'updateOrder') {
+    messageTitle = "🟨 Обновление заказа"
+
+    messageHead =
+      `
+🗣 Родной язык посетителя – ${langUser}🇷🇺
+🍽️ Стол № – ${tableNumber}
+#️⃣ Номер заказа ↴
+${orderId.toTg}                    
+      `;
+    messageBody = `📝Список блюд:`;
+    let disheNumber = 0;
+
+    messageBody +=
+      `
+🔙 Прошлые блюда:    
+    `;
+    ORDER_LIST.forEach(orderItem => {
+      disheNumber++;
+      const porcionTotalCost = orderItem.porcionCost * orderItem.quantityPorcionNumber;
+      basketTotalCost += porcionTotalCost;
+      messageBody +=
+        `
+${disheNumber}. ${orderItem.langMainDishesName} (${orderItem.category})
+    ${orderItem.porcionName} × ${orderItem.quantityPorcionNumber} = ${porcionTotalCost}${simvolMoney}
+        `;
+    });
+
+    messageBody +=
+      `
+🆕 Новые блюда:
+    `
+    BASKET_LIST_STORE.forEach(basketItem => {
+      disheNumber++;
+      const porcionTotalCost = basketItem.porcionCost * basketItem.quantityPorcionNumber;
+      basketTotalCost += porcionTotalCost;
+      messageBody +=
+        `
+${disheNumber}. ${basketItem.langMainDishesName} (${basketItem.category})
+    ${basketItem.porcionName} × ${basketItem.quantityPorcionNumber} = ${porcionTotalCost}${simvolMoney}
+        `;
+    });
+    messageFooter = `💵Стоимость заказа - ${basketTotalCost}${simvolMoney}`;
+  }
+  if (type == 'methodPayment') {
+    messageTitle = "🟩 Оплата заказа"
+
+    messageHead =
+      `
+🗣 Родной язык посетителя – ${langUser}🇷🇺
+🍽️ Стол № – ${tableNumber}
+🏦 Способ оплаты - ${paymentMethod}
+#️⃣ Номер заказа ↴
+${orderId.toTg}   
+    `
+    messageBody = `📝Список блюд:`;
+    let disheNumber = 0;
+    ORDER_LIST.forEach(orderItem => {
+      disheNumber++;
+      const porcionTotalCost = orderItem.porcionCost * orderItem.quantityPorcionNumber;
+      basketTotalCost += porcionTotalCost;
+      messageBody +=
+        `
+${disheNumber}. ${orderItem.langMainDishesName} (${orderItem.category})
+    ${orderItem.porcionName} × ${orderItem.quantityPorcionNumber} = ${porcionTotalCost}${simvolMoney}
+        `;
+    });
+    messageFooter = `💵Стоимость заказа - ${basketTotalCost}${simvolMoney}`;
+  }
   const fullMessage = `
 ${messageTitle}
 ${messageHead}
 ${messageBody}
 ${messageFooter}    
     `
-  sendMessageToTg(fullMessage);
-  // нужно сделать два типа сообщения: одно это обновление заказа, второе это оплата заказа (не разобрался как делать)
+  sendMessageToTg(fullMessage, type, basketTotalCost);
+
 }
 
 function TotalCostBasketCalculation(list, span) {
@@ -448,34 +574,32 @@ function createOrderId() {
 
   // Сохраняем в глобальную переменную
   orderId = newOrderId;
+  user_data.orderId = orderId;
+  savedData();
 
   // Возвращаем новый orderId
   return newOrderId;
 }
 
-function createTimeOrder() {
+function createTimeOrder(type = "time") {
   // Получаем текущую дату и время
   const now = new Date();
 
   // Форматируем компоненты даты с добавлением ведущих нулей
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Месяцы 0-11
   const year = now.getFullYear();
   const hours = String(now.getHours()).padStart(2, '0');
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const time = `${hours}:${minutes}`
 
-  return time
-}
+  if (type == "time") {
+    return time
+  }
 
-function createTimeOrderHistory() {
-  // Получаем текущую дату и время
-  const now = new Date();
-
-  // Форматируем компоненты даты с добавлением ведущих нулей
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const time = `${hours}:${minutes}`
-
-  return time
+  if (type == "dateAndTime") {
+    return `${day}-${month}-${year} ${hours}:${minutes}`
+  }
 }
 
 function createDialogBox(type, title) {
@@ -500,8 +624,10 @@ function createDialogBox(type, title) {
         dialogBox.querySelector("h4").innerText = "Введите номер стола корректно!"
       } else {
         tableNumber = inputText;
+        user_data.tableNumber = tableNumber;
+        savedData();
         createMessageToTelegram("newOrder");
-        wrapper.classList.remove("_active");
+        // wrapper.classList.remove("_active");
       }
 
     });
@@ -539,24 +665,146 @@ function createDialogBox(type, title) {
 
     wrapper.classList.add("_active");
   }
+  else if (type == "info") {
+    dialogBox.innerHTML =
+      `
+    <h4>${title}</h4>
+    <div class="dialog-box__buttons">
+        <button class="close">Ок</button>
+    </div>
+    `
+    const close = dialogBox.querySelector(".close");
 
+    close.addEventListener("click", () => {
+      wrapper.classList.remove("_active");
+    });
+
+    wrapper.classList.add("_active");
+  }
+  else if (type == "preloader") {
+    dialogBox.innerHTML =
+      `
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <style>
+    .spinner {
+      transform-origin: center;
+      animation: rotate 1.5s linear infinite;
+    }
+    .path {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: 0;
+      stroke-linecap: round;
+      animation: dash 1.5s ease-in-out infinite;
+    }
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes dash {
+      0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -35;
+      }
+      100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -124;
+      }
+    }
+  </style>
+  <g class="spinner">
+    <circle class="path" cx="50" cy="50" r="20" fill="none" stroke="var(--color3)" stroke-width="5"></circle>
+  </g>
+</svg>
+      `
+      wrapper.classList.add("_active");
+  }
 }
 
-async function sendMessageToTg(messageText) {
-  const chatId = "-4869517272";
-  const token = "7155440374:AAF23ryT70cvWDcRKq7RB_LpwPF4MLbbOaM";
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+// async function sendMessageToTg(messageText, type = null, totalCost = null) {
+//   setTimeout(() => {
+//     createDialogBox("preloader", "");
+//   }, 0);
+//   const chatId = "-4869517272";
+//   const token = "7155440374:AAF23ryT70cvWDcRKq7RB_LpwPF4MLbbOaM";
+//   const url = `https://api.telegram.org/bot${token}/sendMessage`;
+
+//   try {
+//     const response = await fetch(url, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json'
+//       },
+//       body: JSON.stringify({
+//         chat_id: chatId,
+//         text: messageText,
+//         parse_mode: 'HTML' // Можно использовать 'MarkdownV2' вместо HTML
+//       })
+//     });
+
+//     const result = await response.json();
+
+//     if (!response.ok) {
+//       console.error('Ошибка отправки:', result);
+//       return false;
+//     }
+
+//     console.log('Сообщение отправлено:', result);
+//     BASKET_LIST_STORE.forEach(item => {
+//       ORDER_LIST.unshift(item);
+//     });
+//     BASKET_LIST_STORE = [];
+//     renderBasketCards();
+//     TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
+//     renderMenu(category_active);
+//     renderViewOrderCards();
+//     if (type == "methodPayment") {
+      
+//       const currentOrder = {
+//         dateAndTime: createTimeOrder("dateAndTime"),
+//         totalCost: totalCost,
+//         dishesList: [],
+//       }
+//       currentOrder.dishesList.push(...ORDER_LIST)
+//       HISTORY_LIST.unshift(currentOrder);
+//       // user_data.history_orders = HISTORY_LIST;
+//       tableNumber = "";
+//       // user_data.tableNumber = "";
+//       orderId = "none";
+//       ORDER_LIST = [];
+//       savedData();
+//       renderViewOrderCards();
+//       renderHistoryCard()
+//     }
+    
+//     setTimeout(() => {
+//       createDialogBox("info", "Заказ отправлен!")
+//     }, 2000);
+//     return true;
+
+//   } catch (error) {
+//     console.error('Ошибка сети:', error);
+//     return false;
+//   }
+// }
+
+async function sendMessageToTg(messageText, type = null, totalCost = null) {
+  setTimeout(() => {
+    createDialogBox("preloader", "");
+  }, 0);
 
   try {
-    const response = await fetch(url, {
+    // Вызов серверной функции вместо прямого обращения к Telegram API
+    const response = await fetch('https://your-function-url.ycloudapps.net/send-telegram', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        chat_id: chatId,
-        text: messageText,
-        parse_mode: 'HTML' // Можно использовать 'MarkdownV2' вместо HTML
+        chat_id: "-4869517272",
+        text: messageText
       })
     });
 
@@ -575,7 +823,29 @@ async function sendMessageToTg(messageText) {
     renderBasketCards();
     TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
     renderMenu(category_active);
-    renderViewOrderCards()
+    renderViewOrderCards();
+    
+    if (type == "methodPayment") {
+      const currentOrder = {
+        dateAndTime: createTimeOrder("dateAndTime"),
+        totalCost: totalCost,
+        dishesList: [],
+      }
+      currentOrder.dishesList.push(...ORDER_LIST)
+      HISTORY_LIST.unshift(currentOrder);
+      // user_data.history_orders = HISTORY_LIST;
+      tableNumber = "";
+      // user_data.tableNumber = "";
+      orderId = "none";
+      ORDER_LIST = [];
+      savedData();
+      renderViewOrderCards();
+      renderHistoryCard()
+    }
+    
+    setTimeout(() => {
+      createDialogBox("info", "Заказ отправлен!")
+    }, 2000);
     return true;
 
   } catch (error) {
@@ -585,8 +855,9 @@ async function sendMessageToTg(messageText) {
 }
 
 function renderViewOrderCards() {
-  const order_list = document.querySelector(".order__list")
   orderList.innerHTML = "";
+  user_data.orders = ORDER_LIST;
+  savedData();
 
   ORDER_LIST.forEach(item => {
     const cardOrder = document.createElement("div");
@@ -613,16 +884,16 @@ function renderViewOrderCards() {
   });
   if (ORDER_LIST.length > 0) {
     buyOrderButton.classList.add("_active");
+    shopcaseBuyButton.classList.add("_active");
+    redPointViewOrder.classList.add("_active");
+    redPointViewOrder.innerText = ORDER_LIST.length;
   } else {
-    sendOrderButton.classList.remove("_active")
+    buyOrderButton.classList.remove("_active")
+    shopcaseBuyButton.classList.remove("_active");
+    redPointViewOrder.classList.remove("_active");
   }
 
-  const shopcaseBuyButton = document.querySelector("#shopcaseBuyButton");
-  if (ORDER_LIST.length > 0) {
-    shopcaseBuyButton.classList.add("_active");
-  } else {
-    shopcaseBuyButton.classList.remove("_active");
-  }
+
   shopcaseBuyButton.addEventListener("click", () => {
     createDialogBox("requestPaymentMethod", "Выберете способ оплаты");
   });
@@ -630,3 +901,64 @@ function renderViewOrderCards() {
   TotalCostBasketCalculation(ORDER_LIST, document.getElementById("TotalCostOrderList"));
 }
 
+function historyCardAcardion() {
+  const historyCardsList = document.querySelectorAll(".history-card");
+  historyCardsList.forEach(card => {
+    card.style.height = "40px";
+    card.addEventListener("click", () => {
+      historyCardsList.forEach(card2 => {
+        if (card2 !== card) {
+          card2.style.height = "40px";
+        } else {
+          if (card.style.height == "40px") {
+            const cardHeight = card.scrollHeight;
+            card.style.height = cardHeight + "px";
+          } else {
+            card.style.height = "40px";
+          }
+        }
+      })
+    })
+  })
+}
+function renderHistoryCard() {
+  const historyList = document.querySelector(".history__list");
+  let totalCostHistory = 0;
+  historyList.innerHTML = "";
+
+  HISTORY_LIST.forEach(card => {
+    const historyCardDiv = document.createElement("div");
+    historyCardDiv.className = "history-card";
+    historyCardDiv.innerHTML = 
+    `
+    <div class="history-card-name">
+        <h4>${card.dateAndTime}</h4>
+        <span id="totalCostHistoryName">${card.totalCost}${simvolMoney}</span>
+    </div>
+    <div class="history-card__info">
+        
+    </div>
+    `
+    totalCostHistory += card.totalCost;
+    const historyCardInfoDiv = historyCardDiv.querySelector(".history-card__info");
+
+    card.dishesList.forEach((cardDishe, index) => {
+      const historyCardInfoNameDiv = document.createElement("div");
+      const classBorderTop = !index == 1? "history-card__info-name":"history-card__info-name border-top";
+      historyCardInfoNameDiv.className = classBorderTop;
+      historyCardInfoNameDiv.innerHTML = 
+      `
+      <h5>${index+1}. ${cardDishe.langUserDishesName}</h5>
+      <span id="costHistoryOrder">${cardDishe.porcionName} x ${cardDishe.quantityPorcionNumber} = ${cardDishe.porcionCost*cardDishe.quantityPorcionNumber}${simvolMoney}</span>
+      `
+
+      historyCardInfoDiv.appendChild(historyCardInfoNameDiv);
+    });
+    historyList.appendChild(historyCardDiv);
+  });
+  document.querySelector("#totalCostHistoryList").innerText = `${totalCostHistory}${simvolMoney}`;
+  historyCardAcardion()
+}
+
+// 
+// на след уроке серверная функция по отправке сообщения в телеграмм
