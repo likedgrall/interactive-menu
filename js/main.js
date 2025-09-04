@@ -796,15 +796,15 @@ async function sendMessageToTg(messageText, type = null, totalCost = null) {
   }, 0);
 
   try {
-    // Вызов серверной функции вместо прямого обращения к Telegram API
-    const response = await fetch('https://your-function-url.ycloudapps.net/send-telegram', {
+    // Вызов серверной функции
+    const response = await fetch('https://functions.yandexcloud.net/d4eltp9pvo3711827clf', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        chat_id: "-4869517272",
-        text: messageText
+        chatId: "-4869517272",
+        messageText: messageText
       })
     });
 
@@ -833,9 +833,7 @@ async function sendMessageToTg(messageText, type = null, totalCost = null) {
       }
       currentOrder.dishesList.push(...ORDER_LIST)
       HISTORY_LIST.unshift(currentOrder);
-      // user_data.history_orders = HISTORY_LIST;
       tableNumber = "";
-      // user_data.tableNumber = "";
       orderId = "none";
       ORDER_LIST = [];
       savedData();
