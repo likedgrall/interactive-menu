@@ -706,18 +706,18 @@ nav {
   background-color: var(--color3-1);
 
   &::-webkit-scrollbar {
-    height: 6px;
-    width: 6px;
+    height: 5px;
+    width: 15px;
   }
 
   &::-webkit-scrollbar-track {
     border-radius: 5px;
-    background-color: #d6d8d4;
+    background-color: #ffffff2d;
   }
 
   &::-webkit-scrollbar-thumb {
     border-radius: 5px;
-    background-color: #aa4646;
+    background-color: var(--color3);
   }
 
   & button {
@@ -750,18 +750,18 @@ nav {
   padding: 15px 10px 10px 10px;
 
   &::-webkit-scrollbar {
-    height: 15px;
+    height: 5px;
     width: 15px;
   }
 
   &::-webkit-scrollbar-track {
     border-radius: 5px;
-    background-color: #d6d8d4;
+    background-color: #ffffff2d;
   }
 
   &::-webkit-scrollbar-thumb {
     border-radius: 5px;
-    background-color: #aa4646;
+    background-color: var(--color3);
   }
 
   & .card {
@@ -919,6 +919,7 @@ nav {
 
       &.close {
         border: 1px solid var(--color1);
+        color: var(--color1);
       }
 
       &.card-payment {
@@ -950,7 +951,7 @@ footer {
     gap: 10px;
 
     & a {
-      text-decoration: underline;
+      color: var(--color2);
 
       &:hover {
         text-decoration: none;

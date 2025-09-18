@@ -1,14 +1,42 @@
+import { vocabulary } from "./vocabulary.js";
 import { fetchDishesList } from "./getMenuStore.js";
+
+const langUser = document.documentElement.lang; // Язык пользователя
+applyVocabulary(langUser);
+// Функция для применения словаря к элементам
+function applyVocabulary(lang) {
+    const langData = vocabulary[lang];
+    
+    if (!langData) {
+        console.warn(`Язык '${lang}' не найден в словаре`);
+        return;
+    }
+    
+    // Перебираем все ключи в выбранном языке
+    Object.entries(langData).forEach(([elementId, htmlContent]) => {
+        try {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = htmlContent;
+            } else {
+                console.warn(`Элемент с id '${elementId}' не найден на странице`);
+            }
+        } catch (error) {
+            console.error(`Ошибка при обработке элемента '${elementId}':`, error);
+        }
+    });
+}
 
 let MENU_STORE = ""; // Вся наша таблица Excel
 let BASKET_LIST_STORE = []; // Содержимое корзины. Массив.
 let ORDER_LIST = []; // Список заказов. Массив.
 let HISTORY_LIST = []; // Список истории заказов. Массив.
-const langUser = document.documentElement.lang; // Язык пользователя
+
 const langMain = "ru"; // Главный язык меню
 const simvolMoney = "₽"
 
 // const из html
+const body = document.querySelector("body");
 const sendOrderButton = document.querySelector("#sendOrderButton");
 const wrapper = document.querySelector(".wrapper");
 const dialogBox = document.querySelector(".dialog-box")
@@ -23,14 +51,14 @@ const shopcaseButton = document.querySelector(".shopcase-button");
 const orderWrapperBox = document.querySelector(".order-wrapper-box")
 const orderWrapper = document.querySelector(".order-wrapper");
 const orderList = document.querySelector(".order__list");
-const showOrderList = document.querySelector("#view-order");
+const showOrderList = document.querySelector("#viewOrder");
 const historyOrderButton = document.querySelector(".historyOrderButton")
 const historyWrapper = document.querySelector(".history-wrapper");
 const historyBox = document.querySelector(".history-box");
 const closeWindowHistoryButton = document.querySelector("#closeHistoryWindow");
 const closeWindowOrderButton = document.querySelector("#closeOrderWindow");
 buyOrderButton.addEventListener("click", () => {
-  createDialogBox("requestPaymentMethod", "Выберете способ оплаты");
+  createDialogBox("requestPaymentMethod", `${vocabulary[langUser].paymentMethodChoice}`);
 });
 
 // изменяемые переменные для меню
@@ -47,6 +75,8 @@ let user_data = {
   orders: [],
   orderId: "",
 };
+
+
 
 function checkSavedData() {
   const savedUserData = JSON.parse(localStorage.getItem("user_data"));
@@ -227,10 +257,14 @@ shopcaseButton.onclick = function () {
   if (shopcase.classList.contains("shopcase_active")) {
     iconShopcase.classList.remove("fa-basket-shopping");
     iconShopcase.classList.add("fa-xmark");
+
+    body.style.overflow = "hidden";
   }
   else {
     iconShopcase.classList.remove("fa-xmark");
     iconShopcase.classList.add("fa-basket-shopping");
+
+    body.style.overflow = "auto";
   }
 }
 
@@ -271,16 +305,18 @@ function updateBasket(
 ) {
 
   const card = document.getElementById(`${idCard}`);
-  console.log(card)
   if (action == "plus") {
     const quantityPorcionNumber = parseInt(quantitySpan.innerText) + 1;
     if (buttonType == "basket") {
       if (card) {
         const cardQuantitySpan = card.querySelector(`[data-id='${idPorcion}']`).querySelector(".quantity");
         cardQuantitySpan.innerText = quantityPorcionNumber;
+        card.classList.add("card_active");
       }
     }
-    card.classList.add("card_active");
+    if (card) {
+      card.classList.add("card_active");
+    }
     quantitySpan.innerText = quantityPorcionNumber;
     if (BASKET_LIST_STORE.find(item => item.idPorcion == idPorcion)) {
       BASKET_LIST_STORE.forEach(item => {
@@ -424,7 +460,7 @@ sendOrderButton.addEventListener("click", () => {
     createMessageToTelegram('updateOrder');
   } else {
     if (tableNumber == 'none' || tableNumber == undefined || tableNumber == "") {
-      createDialogBox("requestTableNumber", "Введите номер стола")
+      createDialogBox("requestTableNumber", `${vocabulary[langUser].tableNumberRequestTitle}`)
     } else {
       createMessageToTelegram('newOrder');
     }
@@ -445,7 +481,7 @@ function createMessageToTelegram(type, paymentMethod = null) {
 
     messageHead =
       `
-🗣 Родной язык посетителя – ${langUser}🇷🇺
+🗣 Родной язык посетителя – ${langUser}${vocabulary[langUser].flag}
 🍽️ Стол № – ${tableNumber}
 #️⃣ Номер заказа ↴
 ${newOrderId}                    
@@ -469,7 +505,7 @@ ${disheNumber}. ${basketItem.langMainDishesName} (${basketItem.category})
 
     messageHead =
       `
-🗣 Родной язык посетителя – ${langUser}🇷🇺
+🗣 Родной язык посетителя – ${langUser}${vocabulary[langUser].flag}
 🍽️ Стол № – ${tableNumber}
 #️⃣ Номер заказа ↴
 ${orderId.toTg}                    
@@ -513,7 +549,7 @@ ${disheNumber}. ${basketItem.langMainDishesName} (${basketItem.category})
 
     messageHead =
       `
-🗣 Родной язык посетителя – ${langUser}🇷🇺
+🗣 Родной язык посетителя – ${langUser}${vocabulary[langUser].flag}
 🍽️ Стол № – ${tableNumber}
 🏦 Способ оплаты - ${paymentMethod}
 #️⃣ Номер заказа ↴
@@ -609,10 +645,10 @@ function createDialogBox(type, title) {
     dialogBox.innerHTML =
       `
     <h4>${title}</h4>
-    <input placeholder="Номер стола" type="text">
+    <input placeholder="${vocabulary[langUser].tableNumber}" type="text">
     <div class="dialog-box__buttons">
-        <button class="send">Отправить</button>
-        <button class="close">Отмена</button>
+        <button class="send">${vocabulary[langUser].sendButton}</button>
+        <button class="close">${vocabulary[langUser].closeButton}</button>
     </div>
     `
     const send = dialogBox.querySelector(".send");
@@ -620,8 +656,9 @@ function createDialogBox(type, title) {
 
     send.addEventListener("click", () => {
       const inputText = dialogBox.querySelector("input").value;
-      if (inputText == "" && inputText == null) {
-        dialogBox.querySelector("h4").innerText = "Введите номер стола корректно!"
+      // if (inputText == "" || inputText == null) {
+      if (isNaN(inputText) || inputText == "" || inputText == null) {
+        dialogBox.querySelector("h4").innerText = `${vocabulary[langUser].tableNumberRequestTitleError}`
       } else {
         tableNumber = inputText;
         user_data.tableNumber = tableNumber;
@@ -643,9 +680,9 @@ function createDialogBox(type, title) {
       `
     <h4>${title}</h4>
     <div class="dialog-box__buttons">
-        <button class="card-payment">Карта💳</button>
-        <button class="cash-payment">Наличные💵</button>
-        <button class="close">Отмена</button>
+        <button class="card-payment">${vocabulary[langUser].card}💳</button>
+        <button class="cash-payment">${vocabulary[langUser].cash}💵</button>
+        <button class="close">${vocabulary[langUser].closeButton}</button>
     </div>
     `
 
@@ -653,10 +690,10 @@ function createDialogBox(type, title) {
     const cardPayment = dialogBox.querySelector(".card-payment");
     const cashPayment = dialogBox.querySelector(".cash-payment");
     cardPayment.addEventListener("click", () => {
-      createMessageToTelegram("methodPayment", "card");
+      createMessageToTelegram("methodPayment", `${vocabulary[langMain].card}`);
     });
     cashPayment.addEventListener("click", () => {
-      createMessageToTelegram("methodPayment", "cash");
+      createMessageToTelegram("methodPayment", `${vocabulary[langMain].cash}`);
     });
 
     close.addEventListener("click", () => {
@@ -842,7 +879,7 @@ async function sendMessageToTg(messageText, type = null, totalCost = null) {
     }
     
     setTimeout(() => {
-      createDialogBox("info", "Заказ отправлен!")
+      createDialogBox("info", `${vocabulary[langUser].orderSend}`)
     }, 2000);
     return true;
 
@@ -893,7 +930,7 @@ function renderViewOrderCards() {
 
 
   shopcaseBuyButton.addEventListener("click", () => {
-    createDialogBox("requestPaymentMethod", "Выберете способ оплаты");
+    createDialogBox("requestPaymentMethod", `${vocabulary[langUser].paymentMethodChoice}`);
   });
 
   TotalCostBasketCalculation(ORDER_LIST, document.getElementById("TotalCostOrderList"));
@@ -957,6 +994,3 @@ function renderHistoryCard() {
   document.querySelector("#totalCostHistoryList").innerText = `${totalCostHistory}${simvolMoney}`;
   historyCardAcardion()
 }
-
-// 
-// на след уроке серверная функция по отправке сообщения в телеграмм
