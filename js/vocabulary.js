@@ -17,7 +17,7 @@ export const vocabulary = {
 
         // элементы истории заказов
         oldOrderText: `Ваши прошлые заказы`,
-        totalCostHistory: `Итого: <span id="totalCostHistoryList">670₽</span>`,
+        totalCostHistory: `Итого: <span id="totalCostHistoryList">0₽</span>`,
 
         // диалоговые окна
         tableNumber: `Номер стола`,
@@ -49,7 +49,7 @@ export const vocabulary = {
 
         // элементы истории заказов
         oldOrderText: `Your previous orders`,
-        totalCostHistory: `Total: <span id="totalCostHistoryList">670₽</span>`,
+        totalCostHistory: `Total: <span id="totalCostHistoryList">0₽</span>`,
 
         // диалоговые окна
         tableNumber: `Table number`,

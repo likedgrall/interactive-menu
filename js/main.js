@@ -5,26 +5,26 @@ const langUser = document.documentElement.lang; // Язык пользовате
 applyVocabulary(langUser);
 // Функция для применения словаря к элементам
 function applyVocabulary(lang) {
-    const langData = vocabulary[lang];
-    
-    if (!langData) {
-        console.warn(`Язык '${lang}' не найден в словаре`);
-        return;
+  const langData = vocabulary[lang];
+
+  if (!langData) {
+    console.warn(`Язык '${lang}' не найден в словаре`);
+    return;
+  }
+
+  // Перебираем все ключи в выбранном языке
+  Object.entries(langData).forEach(([elementId, htmlContent]) => {
+    try {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.innerHTML = htmlContent;
+      } else {
+        console.warn(`Элемент с id '${elementId}' не найден на странице`);
+      }
+    } catch (error) {
+      console.error(`Ошибка при обработке элемента '${elementId}':`, error);
     }
-    
-    // Перебираем все ключи в выбранном языке
-    Object.entries(langData).forEach(([elementId, htmlContent]) => {
-        try {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.innerHTML = htmlContent;
-            } else {
-                console.warn(`Элемент с id '${elementId}' не найден на странице`);
-            }
-        } catch (error) {
-            console.error(`Ошибка при обработке элемента '${elementId}':`, error);
-        }
-    });
+  });
 }
 
 let MENU_STORE = ""; // Вся наша таблица Excel
@@ -66,7 +66,6 @@ let tableNumber = 'none';
 let orderId = 'none';
 let category_active = "";
 
-
 // Объекты.
 let user_data = {
   history_orders: [],
@@ -88,6 +87,8 @@ function checkSavedData() {
     }
     if (savedUserData.tableNumber) {
       tableNumber = savedUserData.tableNumber;
+    } else {
+      tableNumber = getQueryParam('table');
     }
     if (savedUserData.basket) {
       BASKET_LIST_STORE = savedUserData.basket;
@@ -100,6 +101,8 @@ function checkSavedData() {
     if (savedUserData.orderId) {
       orderId = savedUserData.orderId;
     }
+  } else {
+    tableNumber = getQueryParam('table');
   }
 }
 checkSavedData()
@@ -371,7 +374,7 @@ function updateBasket(
   }
   console.log(BASKET_LIST_STORE);
   renderBasketCards();
-  
+
 }
 
 function renderBasketCards() {
@@ -756,7 +759,7 @@ function createDialogBox(type, title) {
   </g>
 </svg>
       `
-      wrapper.classList.add("_active");
+    wrapper.classList.add("_active");
   }
 }
 
@@ -798,7 +801,7 @@ function createDialogBox(type, title) {
 //     renderMenu(category_active);
 //     renderViewOrderCards();
 //     if (type == "methodPayment") {
-      
+
 //       const currentOrder = {
 //         dateAndTime: createTimeOrder("dateAndTime"),
 //         totalCost: totalCost,
@@ -815,7 +818,7 @@ function createDialogBox(type, title) {
 //       renderViewOrderCards();
 //       renderHistoryCard()
 //     }
-    
+
 //     setTimeout(() => {
 //       createDialogBox("info", "Заказ отправлен!")
 //     }, 2000);
@@ -861,7 +864,7 @@ async function sendMessageToTg(messageText, type = null, totalCost = null) {
     TotalCostBasketCalculation(BASKET_LIST_STORE, document.getElementById("shopcaseTotalCostNumber"));
     renderMenu(category_active);
     renderViewOrderCards();
-    
+
     if (type == "methodPayment") {
       const currentOrder = {
         dateAndTime: createTimeOrder("dateAndTime"),
@@ -876,8 +879,9 @@ async function sendMessageToTg(messageText, type = null, totalCost = null) {
       savedData();
       renderViewOrderCards();
       renderHistoryCard()
+      removeTableFromUrl();
     }
-    
+
     setTimeout(() => {
       createDialogBox("info", `${vocabulary[langUser].orderSend}`)
     }, 2000);
@@ -964,8 +968,8 @@ function renderHistoryCard() {
   HISTORY_LIST.forEach(card => {
     const historyCardDiv = document.createElement("div");
     historyCardDiv.className = "history-card";
-    historyCardDiv.innerHTML = 
-    `
+    historyCardDiv.innerHTML =
+      `
     <div class="history-card-name">
         <h4>${card.dateAndTime}</h4>
         <span id="totalCostHistoryName">${card.totalCost}${simvolMoney}</span>
@@ -979,12 +983,12 @@ function renderHistoryCard() {
 
     card.dishesList.forEach((cardDishe, index) => {
       const historyCardInfoNameDiv = document.createElement("div");
-      const classBorderTop = !index == 1? "history-card__info-name":"history-card__info-name border-top";
+      const classBorderTop = !index == 1 ? "history-card__info-name" : "history-card__info-name border-top";
       historyCardInfoNameDiv.className = classBorderTop;
-      historyCardInfoNameDiv.innerHTML = 
-      `
-      <h5>${index+1}. ${cardDishe.langUserDishesName}</h5>
-      <span id="costHistoryOrder">${cardDishe.porcionName} x ${cardDishe.quantityPorcionNumber} = ${cardDishe.porcionCost*cardDishe.quantityPorcionNumber}${simvolMoney}</span>
+      historyCardInfoNameDiv.innerHTML =
+        `
+      <h5>${index + 1}. ${cardDishe.langUserDishesName}</h5>
+      <span id="costHistoryOrder">${cardDishe.porcionName} x ${cardDishe.quantityPorcionNumber} = ${cardDishe.porcionCost * cardDishe.quantityPorcionNumber}${simvolMoney}</span>
       `
 
       historyCardInfoDiv.appendChild(historyCardInfoNameDiv);
@@ -993,4 +997,18 @@ function renderHistoryCard() {
   });
   document.querySelector("#totalCostHistoryList").innerText = `${totalCostHistory}${simvolMoney}`;
   historyCardAcardion()
+}
+
+
+function getQueryParam(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+function removeTableFromUrl() {
+    // Создаем новый URL без параметра table
+    const newUrl = window.location.pathname + window.location.hash;
+    
+    // Меняем URL в адресной строке без перезагрузки
+    window.history.replaceState(null, '', newUrl);
 }
