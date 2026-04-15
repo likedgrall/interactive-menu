@@ -938,6 +938,7 @@ function renderViewOrderCards() {
   });
 
   TotalCostBasketCalculation(ORDER_LIST, document.getElementById("TotalCostOrderList"));
+  TotalCostBasketCalculation(ORDER_LIST, document.querySelector("#totalCostOrderText span"));
 }
 
 function historyCardAcardion() {
